@@ -26,5 +26,5 @@ jq>=1.6.0
 typer>=0.9.0
 websockets
 pytest-asyncio>=0.22.0
-flask
-flask-cors
+flask==3.0.3
+flask-cors==4.0.1
