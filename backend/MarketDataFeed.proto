@@ -1,0 +1,109 @@
+// Upstox MarketDataFeed V3 protobuf schema (minimal - LTPC mode only).
+// Reference: https://github.com/upstox/upstox-python/blob/main/MarketDataFeedV3.proto
+//
+// This schema covers the fields decoded by upstox_real._decode_feed_frame().
+// Drop a complete .proto from Upstox repo if you need full-depth / option-greeks support.
+
+syntax = "proto3";
+
+package com.upstox.marketdatafeederv3udapi.rpc.proto;
+
+message LTPC {
+  double ltp  = 1;   // last traded price
+  int64  ltt  = 2;   // last traded time (epoch millis)
+  int64  ltq  = 3;   // last traded quantity
+  double cp   = 4;   // close price (previous day)
+}
+
+message MarketLevel {
+  repeated Quote bidAskQuote = 1;
+}
+
+message Quote {
+  int32  bidQ = 1;
+  double bidP = 2;
+  int32  askQ = 3;
+  double askP = 4;
+}
+
+message OptionGreeks {
+  double delta = 1;
+  double theta = 2;
+  double gamma = 3;
+  double vega  = 4;
+  double rho   = 5;
+}
+
+message MarketOHLC {
+  repeated OHLC ohlc = 1;
+}
+
+message OHLC {
+  string interval = 1;
+  double open  = 2;
+  double high  = 3;
+  double low   = 4;
+  double close = 5;
+  int64  vol   = 6;
+  int64  ts    = 7;
+}
+
+message FullFeed {
+  oneof FullFeedUnion {
+    MarketFullFeed marketFF = 1;
+    IndexFullFeed  indexFF  = 2;
+  }
+}
+
+message MarketFullFeed {
+  LTPC          ltpc          = 1;
+  MarketLevel   marketLevel   = 2;
+  OptionGreeks  optionGreeks  = 3;
+  MarketOHLC    marketOHLC    = 4;
+  double        atp           = 5;
+  int64         vtt           = 6;
+  double        oi            = 7;
+  double        iv            = 8;
+  double        tbq           = 9;
+  double        tsq           = 10;
+}
+
+message IndexFullFeed {
+  LTPC       ltpc       = 1;
+  MarketOHLC marketOHLC = 2;
+}
+
+message FirstLevelWithGreeks {
+  LTPC         ltpc         = 1;
+  Quote        firstDepth   = 2;
+  OptionGreeks optionGreeks = 3;
+  double       vtt          = 4;
+  double       oi           = 5;
+  double       iv           = 6;
+}
+
+message Feed {
+  oneof FeedUnion {
+    LTPC                 ltpc                 = 1;
+    FullFeed             fullFeed             = 2;
+    FirstLevelWithGreeks firstLevelWithGreeks = 3;
+  }
+  string requestMode = 4;
+}
+
+enum Type {
+  initial_feed = 0;
+  live_feed    = 1;
+  market_info  = 2;
+}
+
+message MarketInfo {
+  map<string, string> segmentStatus = 1;
+}
+
+message FeedResponse {
+  Type currentTs           = 1;
+  map<string, Feed> feeds  = 2;
+  int64 currentTsMillis    = 3;
+  MarketInfo marketInfo    = 4;
+}

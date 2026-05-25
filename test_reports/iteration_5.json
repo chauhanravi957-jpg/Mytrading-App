@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 5 testing: 57/57 backend pytest tests pass (6 new protobuf + 12 new candles + 7 regression + 32 old). Frontend verified end-to-end on mobile (390x844): full order flow Dashboard → Options → Order works. Candle chart card renders below live sparkline with 4 interval chips (1m/5m/15m/1D), 60 SVG candle bodies with green/red coloring, Y-axis labels (90.11, 91.53, 93.06, 94.50, 96.11), dashed grid lines, header showing change% (e.g. '-3.10 (-3.25%)'). Interval taps refetch successfully. SL/TGT auto-prefilled LTP-4 / LTP+6 from WS ticks. BUY/SELL buttons functional. Protobuf decoder verified by serializing a real FeedResponse with LTPC.ltp=22150.45 under key 'NSE_INDEX|Nifty 50' → decoder returns {symbol:'NIFTY 50', ltp:22150.45} (reverse-mapped via INSTRUMENT_KEYS).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration5.py",
+    "/app/backend/tests/test_iteration4.py",
+    "/app/backend/tests/test_trading_api.py",
+    "/app/backend/tests/test_websocket_and_real.py",
+    "/app/test_reports/pytest/iteration_5.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Stale Metro bundle was serving the OLD order.tsx (without candle section). After `sudo supervisorctl restart expo` the new bundle picked up — main agent should be aware that adding new imports/components sometimes requires an Expo restart.",
+    "Expo warns react-native-svg@15.15.5 expected 15.12.1; not blocking but consider pinning to recommended version for Expo SDK compat.",
+    "MarketDataFeed_pb2.py was generated against protobuf 6.31.1 gencode but app runs protobuf 7.34.1 runtime — works because forward-compat is supported. Logged a benign warning from google-ai-generativelanguage transitive dep only (not used).",
+    "test_iteration4.py had stale assertion `HAS_PB2 is False` which I updated to `HAS_PB2 is True` (now the pb2 file is generated). Aligned with iter5 reality."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration5.py (new)",
+    "/app/backend/tests/test_iteration4.py (updated stale HAS_PB2 assertion)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None. Orders placed during BUY test get cleaned up by mongo's natural test lifecycle.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Order page testIDs: order-close, order-type-market, order-type-limit, limit-price-input, lot-minus, lot-plus, sl-input, tgt-input, buy-button, sell-button, interval-1minute, interval-5minute, interval-15minute, interval-day. CandleChart renders <svg rect> bodies + <line> wicks; verify with `await page.locator('svg rect').count()`. Candles endpoint: GET /api/market/candles/{symbol}?interval=X&count=N where interval ∈ {1minute,5minute,15minute,30minute,day,week,month}, count clamped to [5,200]. Protobuf decoder lives at upstox_real._decode_feed_frame(buf); to build a test frame: `from MarketDataFeed_pb2 import FeedResponse, Feed; r=FeedResponse(); f=Feed(); f.ltpc.ltp=22150.45; r.feeds['NSE_INDEX|Nifty 50'].CopyFrom(f); buf=r.SerializeToString()`. INSTRUMENT_KEYS keys: NIFTY 50, BANKNIFTY, FINNIFTY, SENSEX. NOTE: If new components/screens don't appear after editing, run `sudo supervisorctl restart expo`.",
+  "rca_of_issue": "Initial frontend test failed (interval chips not found) because Metro had a cached bundle from before /app/frontend/app/order.tsx was updated with the CandleChart section. Mitigation: `sudo supervisorctl restart expo` forces a fresh Metro start which re-bundles. After restart all 4 interval chips + 60 candle bodies + green/red coloring rendered correctly."
+}

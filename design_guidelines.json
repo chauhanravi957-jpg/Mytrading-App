@@ -1,0 +1,137 @@
+{
+  "theme": "Dark",
+  "archetype": "Archetype 2: The Performance Pro",
+  "brand_identity": {
+    "vibe": "Command-center focus, tactical, high-speed, reliable",
+    "rationale": "Trading apps require precision and extreme legibility. The UI must feel like a professional tool that gets out of the way of the data."
+  },
+  "typography": {
+    "rules": {
+      "headings": "Chivo or Manrope (Bold/Black). Used for screen titles, stock symbols.",
+      "body": "Manrope (Regular/Medium). Clean geometric sans for high readability.",
+      "numbers": "IBM Plex Mono or system default with tabular-nums. CRITICAL: All live prices, percentages, and quantities MUST use tabular numbers to prevent horizontal jitter during rapid updates."
+    },
+    "scale": {
+      "h1": { "fontSize": 32, "fontWeight": "800", "tracking": -0.5 },
+      "h2": { "fontSize": 24, "fontWeight": "700", "tracking": -0.5 },
+      "h3": { "fontSize": 18, "fontWeight": "600" },
+      "body": { "fontSize": 14, "fontWeight": "400" },
+      "label_small": { "fontSize": 11, "fontWeight": "600", "textTransform": "uppercase", "letterSpacing": 0.5 }
+    }
+  },
+  "colors": {
+    "backgrounds": {
+      "app_bg": "#0A0A0C",
+      "surface": "#141418",
+      "surface_elevated": "#1C1C22",
+      "bottom_sheet": "#1A1A20"
+    },
+    "borders": {
+      "subtle": "rgba(255,255,255,0.08)",
+      "focus": "rgba(255,255,255,0.2)"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#8F8F9A",
+      "tertiary": "#62626E"
+    },
+    "accents": {
+      "brand_primary": "#007AFF",
+      "buy_green": "#24D366",
+      "sell_red": "#FF3B30",
+      "buy_green_bg": "rgba(36, 211, 102, 0.15)",
+      "sell_red_bg": "rgba(255, 59, 48, 0.15)",
+      "atm_highlight": "rgba(0, 122, 255, 0.15)"
+    }
+  },
+  "layout_and_spacing": {
+    "container_padding": 16,
+    "border_radius": {
+      "sm": 4,
+      "md": 8,
+      "lg": 16,
+      "xl": 24
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "style_rules": "Avoid heavy drop shadows. Rely on 1px solid borders (border-width: 1, border-color: subtle) and color contrast to separate elements. Flat, cardless design for lists."
+  },
+  "components": {
+    "buttons": {
+      "primary": {
+        "backgroundColor": "#FFFFFF",
+        "color": "#0A0A0C",
+        "borderRadius": 8,
+        "paddingVertical": 14,
+        "fontWeight": "700"
+      },
+      "buy": {
+        "backgroundColor": "#24D366",
+        "color": "#FFFFFF",
+        "borderRadius": 8
+      },
+      "sell": {
+        "backgroundColor": "#FF3B30",
+        "color": "#FFFFFF",
+        "borderRadius": 8
+      }
+    },
+    "inputs": {
+      "backgroundColor": "#141418",
+      "borderWidth": 1,
+      "borderColor": "rgba(255,255,255,0.1)",
+      "borderRadius": 8,
+      "color": "#FFFFFF",
+      "padding": 12
+    },
+    "bottom_tabs": {
+      "backgroundColor": "#0A0A0C",
+      "borderTopWidth": 1,
+      "borderColor": "rgba(255,255,255,0.05)",
+      "activeColor": "#FFFFFF",
+      "inactiveColor": "#62626E"
+    }
+  },
+  "motion_and_interactions": {
+    "price_flash": "When a stock price updates, flash the background briefly (green for up, red for down) using React Native Reanimated. Duration: 300ms fade out.",
+    "bottom_sheet": "Use smooth spring animations for the Buy/Sell order placement modal.",
+    "tab_switch": "Instant navigation without heavy transitions to maintain the feeling of speed."
+  },
+  "specific_screens": {
+    "splash_and_login": {
+      "layout": "Minimalist centered layout. Large Brand Logo/Text.",
+      "action": "OAuth Simulation Button -> 'Login with Upstox'. Use brand_primary (#007AFF) or pure white.",
+      "ux_flow": "Check for stored token -> If exists, jump to Dashboard. Else, show Login. Upon click -> Show loading spinner -> Save mock token -> Navigate."
+    },
+    "dashboard": {
+      "header": "Sticky horizontal scroll of Market Indices (NIFTY 50, BANKNIFTY) with live ticking prices.",
+      "content": "Watchlist. Rows containing: Stock Symbol (Bold text), Subtitle (NSE), Right-aligned Price & Change%.",
+      "visuals": "Tap on a row to open quick actions or expand chart area."
+    },
+    "option_chain": {
+      "layout": "Data-heavy 3-column table view. Center column: Strike Price (grey bg). Left: Calls (LTP, OI). Right: Puts (LTP, OI).",
+      "highlight": "The ATM (At The Money) strike row must have a distinct background (accents.atm_highlight).",
+      "typography": "Use small, dense text (12px). All numbers MUST be tabular."
+    },
+    "order_modal": {
+      "type": "Bottom Sheet taking 60% of screen.",
+      "header": "Toggle Switch for BUY/SELL. Changes the entire modal's accent color (Green/Red).",
+      "fields": "Quantity Stepper, Order Type (Market/Limit), Price Input. Toggles for Auto SL and Auto Target.",
+      "footer": "Massive full-width Swipe-to-Submit or bold Tap button at the bottom."
+    }
+  },
+  "instructions_to_main_agent": [
+    "Use React Native StyleSheet for styling. Do not use Tailwind unless NativeWind is pre-installed.",
+    "Implement navigation using expo-router. Create tabs for Dashboard, Option Chain, Portfolio, Orders, Profile.",
+    "For icons, use @expo/vector-icons (preferably Feather or Ionicons).",
+    "CRITICAL: Apply 'fontVariant: [\"tabular-nums\"]' to all text elements displaying prices, percentages, or quantities to prevent jittering.",
+    "Simulate live websockets by using `setInterval` to randomly fluctuate prices of NIFTY and Watchlist items every 1-2 seconds.",
+    "For the Buy/Sell modal, build a responsive bottom sheet using generic React Native Modals or a library like @gorhom/bottom-sheet if possible, otherwise use a custom Modal.",
+    "Use test IDs (e.g., testID='login-button') on all interactive elements as per the critical rules."
+  ]
+}

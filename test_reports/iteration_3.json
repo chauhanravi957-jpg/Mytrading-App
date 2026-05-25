@@ -1,0 +1,43 @@
+{
+  "summary": "Iteration 3 testing for UpTrade — WebSocket live feed + full-screen Order page + Upstox real-integration scaffold. Backend: 27/27 pytest tests pass (19 regression + 8 new for WS /api/ws/market hello/subscribe/tick/unsubscribe/disconnect, upstox_real.py module, .env placeholders, mock-mode login URL). Frontend: Options screen → tap CE/PE pushes to /order with all expected params (symbol='NIFTY 50 {strike} {type}', ltp, expiry, lotSize=25, instType, iv). Full-screen order page renders all 9 required testIDs; SL pre-filled = LTP-4, Target = LTP+6 (diff exactly 10 verified: 75.92/85.92). Live LTP updates via WS (LTP went 80.05 → 80.43 during test). Sparkline polyline renders after ticks accumulate (2 polylines: header + LIVE PRICE card). ● LIVE indicator visible in Option Chain header. BUY tap successfully POSTs to /api/orders/place — order persisted in DB with correct symbol/qty/SL/TGT.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/orders/place", "issue": "Order symbols from option chain are formatted as 'NIFTY 50 {strike} CE/PE', but MOCK_FNO_BASE seeded options use 'NIFTY {strike} CE/PE' (no '50'). When placing a MARKET order from option chain, backend cannot resolve the symbol in any MOCK_* table → falls back to random.uniform(100, 3000) at server.py:338 → executed price ₹490.81 while on-screen LTP was ₹80.43. Recommend either: (a) normalize symbol in frontend openOrder() to 'NIFTY {strike} CE', or (b) add a symbol-base lookup that strips 'NIFTY 50 ' → 'NIFTY ', or (c) use the LTP passed via params for the market-fill price."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_trading_api.py",
+    "/app/backend/tests/test_websocket_and_real.py",
+    "/app/test_reports/pytest/iter3.xml",
+    "/app/test_reports/pytest/iter3_ws.xml"
+  ],
+  "action_items": [
+    "(MINOR) Fix order-price mismatch: option-chain pushes symbol 'NIFTY 50 21900 CE' but backend MOCK_FNO_BASE has 'NIFTY 22150 CE' format → market price falls to random 100-3000 instead of resolving near the LTP. Simplest fix: in /app/frontend/app/(tabs)/options.tsx openOrder(), use 'NIFTY {strike} {type}' (drop the ' 50'), OR in /app/backend/server.py place_order, use the request's last-known LTP when MARKET price=0 and symbol not in MOCK tables (frontend can send ltp in payload).",
+    "(NONE-blocking) Consider matching the WS pump's _base_for('NIFTY {strike} CE') logic (currently hard-coded 80.0 for any CE/PE) with the same strike-aware formula used in /market/option-chain so WS LTPs better track the REST values."
+  ],
+  "critical_code_review_comments": [
+    "Symbol naming inconsistency between option-chain REST rows (strike-only label) and the order-screen symbol pushed to /order ('NIFTY 50 {strike} CE'). Two formats coexist; pick one to avoid the market-price fallback bug above.",
+    "_base_for() in server.py uses 80.0 for ANY CE/PE symbol, so all option ticks oscillate around ₹80 regardless of strike — fine for demo, but visually inconsistent with REST option-chain LTPs that span ₹2–₹500.",
+    "ws_market: `pump_task` is created inside the same coroutine that awaits receive_text(); cancellation on WebSocketDisconnect happens in `finally` — confirmed reconnect after disconnect works without server crash (verified by test_ws_disconnect_no_crash).",
+    "/app/frontend/app/order.tsx opens a fresh WS for every mount AND options.tsx keeps its own WS open — fine, but each /order visit creates a new WS connection. Cleanup `ws.close()` on unmount is correctly wired."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_websocket_and_real.py (new — 8 tests for WS + upstox_real + .env placeholders)"
+  ],
+  "success_rate": {
+    "backend": "100% (27/27 pytest passed; includes WS hello/subscribe/tick/unsubscribe/disconnect + upstox_real module + .env placeholders + mock login URL)",
+    "frontend": "100% (all iteration-3 spec items verified: option-chain testIDs, /order route with params, all 9 order-page testIDs, auto SL=LTP-4 / TGT=LTP+6, live LTP via WS, sparkline polyline, ● LIVE indicator, BUY → /api/orders/place persistence)"
+  },
+  "seed_data_creation": "Orders accumulated in db.orders during tests — same Upstox mock collection; no cleanup needed (auto-grows).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend URL: https://flutter-finance-app-1.preview.emergentagent.com. WS URL: wss://flutter-finance-app-1.preview.emergentagent.com/api/ws/market (replies {type:'hello',mode:'mock'} on connect, then ticks every ~700ms after subscribe). To auth on web for frontend tests: localStorage.setItem('upstox_access_token','upx_mock_xyz') + 'upstox_user' JSON, then reload. USE_REAL_UPSTOX=false (real Upstox code is dormant; only the mock paths execute). Order page route is /order with params: symbol, ltp, underlying, expiry, lotSize, instType (CE|PE|FUT|EQ), iv. Auto SL/TGT live-update from WS ticks unless user types in those inputs (tracked via slEdited/tgtEdited refs in order.tsx).",
+  "rca_of_issue": "Minor: option-chain pushed symbol 'NIFTY 50 22150 CE' is not present in MOCK_FNO_BASE (which has 'NIFTY 22150 CE' — no '50'). Result: /api/orders/place falls into the random-price branch at server.py:338. Reproduction: tap any strike → BUY → check /api/orders, executed price will be in [100,3000] regardless of on-screen LTP. Mitigation: align symbol formats between options.tsx openOrder() and MOCK_FNO_BASE, OR have backend fall back to the LTP supplied by the frontend (extend OrderRequest with an optional 'reference_ltp' field)."
+}

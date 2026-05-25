@@ -1,0 +1,31 @@
+{
+  "summary": "Comprehensive backend + frontend testing of Upstox-style mock trading app. Backend: 13/13 pytest tests passed (auth, market, orders, portfolio). Frontend: splash->login->OAuth simulation->dashboard flow works; 4 indices and 10 watchlist stocks render; token persists in localStorage; auto-login on reload skips to dashboard; order modal opens. One minor UI issue: Auto SL/Target switches sit below mobile viewport (390x844) inside OrderModal and require scrolling.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "OrderModal", "issue": "Auto SL switch and Auto Target switch are below the 390x844 viewport fold; modal sheet content not scrollable causing Playwright 'Element outside viewport' error when interacting. Real users on small phones may also need to scroll but modal lacks ScrollView.", "testID": "auto-sl-switch / auto-target-switch / place-order-button", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "OrderModal", "issues": ["Bottom sheet is tall; Place Order button risks being below fold on small devices. Wrap sheet content in ScrollView or reduce vertical paddings."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_trading_api.py", "/app/test_reports/pytest/iter1.xml"],
+  "action_items": [
+    "Wrap OrderModal sheet content inside a ScrollView so Auto SL switch, Auto Target switch, and Place Order button are reachable on small (<=400pt height) viewports.",
+    "(Optional) expo-secure-store version 55.0.13 vs expected ~15.0.8 warning in expo logs — verify on native build."
+  ],
+  "critical_code_review_comments": [
+    "server.py: place_order returns price 0 if order_type=='MARKET' lookup misses; current code falls back to random — OK for mock.",
+    "Backend correctly excludes Mongo _id via projection in list_orders.",
+    "Frontend api.ts has proper Bearer auth header injection and localStorage fallback for web."
+  ],
+  "updated_files": ["/app/backend/tests/test_trading_api.py"],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "~90% (core flows pass; modal scroll minor issue)"},
+  "seed_data_creation": "Tests create transient orders in MongoDB orders collection (prefixed with ORD ids), then cancel them. No cleanup required for mock data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use EXPO_PUBLIC_BACKEND_URL from /app/frontend/.env. Mock OAuth: POST /api/auth/upstox/callback with any non-empty code returns upx_mock_<hex> token. Bearer required for /auth/me, /orders/*, /portfolio. Frontend testIDs used: splash-screen, login-with-upstox-button, login-step-label, dashboard-scroll, index-*, stock-*, buy-*, sell-*, order-modal, qty-plus/minus/input, auto-sl-switch, auto-target-switch, place-order-button, logout-button.",
+  "rca_of_issue": "OrderModal renders content vertically without an internal ScrollView; on a 390x844 phone viewport the Auto SL/Target rows + Place Order button overflow below screen edge. Repro: open dashboard, tap any B/S — Switches are not initially visible. Mitigation: wrap modal sheet body in <ScrollView> or set maxHeight + scrollEnabled."
+}

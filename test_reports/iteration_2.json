@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 2 testing for UpTrade — F&O live prices section and new ₹-based Auto SL/Target defaults. Backend: 19/19 pytest tests passing (added 6 new F&O tests). Frontend: F&O section renders 18 instruments with working ALL/FUT/CE/PE filter chips (14/2/2 counts verified). Order modal correctly defaults to Auto SL=₹4 ON and Auto Target=₹6 ON, with proper BUY hint text 'below entry by ₹4' and 'above entry by ₹6'. F&O Buy/Sell opens modal with correct symbol + LTP. Watchlist B/S still functional with new openOrder(sym,ltp,side) signature.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_trading_api.py",
+    "/app/test_reports/pytest/iter2.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Metro DiskCache had a deserialization error ('Unable to deserialize cloned data') causing a stale bundle to be served initially — the deployed Dashboard was missing the F&O section until expo was restarted. Restart auto-recovered via full crawl. If this recurs, consider clearing METRO_CACHE_ROOT in the service definition.",
+    "OrderModal SL/Target inputs default to strings '4'/'6' (good); however, no input validation if user clears them (parseFloat('') returns NaN -> 0). Hint text shows 'NaN' briefly if user empties the field. Low priority."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_trading_api.py (added 6 F&O tests: test_fno_all, test_fno_filter_fut/ce/pe, test_place_order_fno_fut, test_place_order_fno_option)"
+  ],
+  "success_rate": {
+    "backend": "100% (19/19)",
+    "frontend": "100% (all listed F&O + Auto SL/Target flows verified)"
+  },
+  "seed_data_creation": "None. Test orders created via API are auto-cleaned by the cancel flow within test_place_and_list_and_cancel.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend mock-mode app; auth uses upx_mock_* tokens (no real creds). To bypass login on web for Dashboard testing: set localStorage 'upstox_access_token' to 'upx_mock_xxx' and 'upstox_user' JSON before reload. EXPO_PUBLIC_BACKEND_URL=https://flutter-finance-app-1.preview.emergentagent.com. If F&O testIDs are missing from DOM despite code being correct, restart expo (sudo supervisorctl restart expo) — Metro DiskCache deserialization can serve stale bundles.",
+  "rca_of_issue": "N/A - no functional bugs found. Backend endpoints (/api/market/fno with FUT/CE/PE filter, /api/orders/place with F&O symbols resolving via MOCK_FNO_BASE) all behave per spec. Frontend OrderModal correctly initializes autoSL=true/autoTarget=true with slRs='4'/tgtRs='6' and resets on each visible reopen via useEffect."
+}
