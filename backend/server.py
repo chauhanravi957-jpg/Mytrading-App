@@ -1401,9 +1401,4 @@ def get_indices():
 if __name__ == "__main__":
     threading.Thread(target=lambda: run_background(host='0.0.0.0', port=6789, poll_interval=0.5, access_token=ACCESS_TOKEN), daemon=True).start()
 
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        debug=False,
-        use_reloader=False
-    )
+    app.run(host="0.0.0.0", port=5000)
