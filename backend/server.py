@@ -72,7 +72,7 @@ def refresh_access_token():
     global ACCESS_TOKEN
     global HEADERS
 
-    url = "https://api.upstox.com/login/authorization/token"
+    url = "https://api-v2.upstox.com/login/authorization/token"
 
     payload = {
         "grant_type": "refresh_token",
@@ -179,6 +179,64 @@ def _normalize_funds(response):
     }
 
 
+def _log_upstox_payload(label, payload):
+    print(f"UPSTOX {label} RESPONSE:")
+    try:
+        print(json.dumps(payload, indent=2, default=str))
+    except TypeError:
+        print(payload)
+
+
+def _normalize_profile(payload):
+    if not isinstance(payload, dict):
+        return payload
+
+    normalized = dict(payload)
+
+    user_id = (
+        payload.get('user_id')
+        or payload.get('userId')
+        or payload.get('client_id')
+        or payload.get('clientId')
+        or payload.get('id')
+    )
+    user_name = (
+        payload.get('user_name')
+        or payload.get('userName')
+        or payload.get('name')
+        or payload.get('full_name')
+    )
+    email = (
+        payload.get('email')
+        or payload.get('email_id')
+        or payload.get('emailAddress')
+    )
+    client_id = (
+        payload.get('client_id')
+        or payload.get('clientId')
+    )
+
+    if user_id is not None:
+        normalized['user_id'] = user_id
+    if user_name is not None:
+        normalized['user_name'] = user_name
+    if email is not None:
+        normalized['email'] = email
+    if client_id is not None:
+        normalized['client_id'] = client_id
+
+    normalized['broker'] = payload.get('broker') or 'UPSTOX'
+    normalized['exchanges'] = payload.get('exchanges') or payload.get('exchange') or []
+    normalized['products'] = payload.get('products') or []
+    normalized['order_types'] = payload.get('order_types') or payload.get('orderTypes') or []
+    normalized['poa'] = payload.get('poa')
+    normalized['ddpi'] = payload.get('ddpi')
+    normalized['is_active'] = payload.get('is_active')
+    normalized['user_type'] = payload.get('user_type') or payload.get('userType')
+
+    return normalized
+
+
 def _get_order_id(result):
     if not isinstance(result, dict):
         return None
@@ -193,8 +251,10 @@ def auth_profile():
     url = f"{BASE_URL}/user/profile"
 
     response = requests.get(url, headers=HEADERS)
+    payload = _unwrap_response(response)
+    _log_upstox_payload('PROFILE', payload)
 
-    return jsonify(_unwrap_response(response))
+    return jsonify(_normalize_profile(payload))
 
 @app.route("/api/authentication/logout")
 def auth_logout():
@@ -211,6 +271,8 @@ def auth_funds():
     url = f"{BASE_URL}/user/get-funds-and-margin"
 
     response = requests.get(url, headers=HEADERS)
+    payload = _unwrap_response(response)
+    _log_upstox_payload('FUNDS', payload)
 
     return jsonify(_normalize_funds(response))
 
@@ -1131,7 +1193,7 @@ def upstox_login():
         f"&redirect_uri={callback_redirect}"
         f"&state={encoded_app_redirect}"
     )
-
+     
     return redirect(auth_url)
 
 @app.route("/api/auth/callback")
@@ -1171,11 +1233,14 @@ def auth_callback():
         ACCESS_TOKEN = token_data["access_token"]
         HEADERS["Authorization"] = f"Bearer {ACCESS_TOKEN}"
         print("NEW TOKEN SAVED")
+      
 
     target = unquote(state) if state else "uptrade://auth"
     if "access_token" in token_data:
         sep = '&' if '?' in target else '?'
         target = f"{target}{sep}access_token={ACCESS_TOKEN}"
+
+    print("FINAL REDIRECT:", target) 
 
     return f"""
     <html>
