@@ -15,6 +15,12 @@ try:
 except ImportError:
     websockets = None
 
+# Try to import position_exit_manager for LTP updates
+try:
+    import position_exit_manager
+except ImportError:
+    position_exit_manager = None
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("realtime")
 
@@ -82,6 +88,17 @@ class AsyncRealtimeServer:
             if last and last.get("ltp") == tick.get("ltp"):
                 continue
             self.tick_cache[symbol] = tick
+            
+            # Update position exit manager with LTP data
+            if position_exit_manager:
+                try:
+                    ltp = tick.get("ltp")
+                    if ltp and ltp > 0:
+                        # Try to update using the symbol (which could be instrument_key)
+                        position_exit_manager.update_ltp(symbol, ltp)
+                except Exception as e:
+                    logger.warning("Failed to update position exit manager with tick: %s", str(e))
+            
             for ws in list(self.subscribers.get(symbol, [])):
                 to_broadcast[ws].append(tick)
 
